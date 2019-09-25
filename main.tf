@@ -7,7 +7,7 @@ provider "vmc" {
 }
 
 data "vmc_org" "my_org" {
-  id = ""
+  id = "54937bce-8119-4fae-84f5-e5e066ee90e6"
 }
 
 data "vmc_connected_accounts" "my_accounts" {
@@ -37,10 +37,9 @@ resource "vmc_sddc" "sddc_1" {
   # sddc_template_id = ""
   deployment_type = "SingleAZ"
 
-  account_link_sddc_config = [
-    {
-      customer_subnet_ids  = ["${data.vmc_customer_subnets.my_subnets.ids.0}"]
-      connected_account_id = "${data.vmc_connected_accounts.my_accounts.ids.0}"
-    },
-  ]
+  account_link_sddc_config {
+    customer_subnet_ids  = ["${data.vmc_customer_subnets.my_subnets.ids.0}"]
+    connected_account_id = "${data.vmc_connected_accounts.my_accounts.ids.0}"
+   }
+
 }

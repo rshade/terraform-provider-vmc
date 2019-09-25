@@ -1,13 +1,12 @@
 package vmc
 
 import (
-	"context"
 	"fmt"
-	"github.com/antihax/optional"
-	"log"
-
 	"github.com/hashicorp/terraform/helper/schema"
+	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/utils"
+	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/com/vmware/vmc/orgs/account_link/connectedAccounts"
 	"gitlab.eng.vmware.com/vapi-sdk/vmc-go-sdk/vmc"
+	"log"
 )
 
 func dataSourceVmcConnectedAccounts() *schema.Resource {
@@ -40,10 +39,13 @@ func dataSourceVmcConnectedAccountsRead(d *schema.ResourceData, m interface{}) e
 	client := m.(*vmc.Client)
 	orgID := d.Get("org_id").(string)
 	providerType := d.Get("provider_type").(string)
-	// var obj vmc.Organization
-	providerString := optional.NewString(providerType)
-	accounts, _, err := client.AccountLinkingApi.OrgsOrgAccountLinkConnectedAccountsGet(
-		context.Background(), orgID, &vmc.OrgsOrgAccountLinkConnectedAccountsGetOpts{Provider: providerString})
+	connector, err := utils.NewVmcConnector(client.RefreshToken, "", "")
+	if err != nil {
+		return fmt.Errorf("Error while reading accounts from org %q: %v", orgID, err)
+	}
+
+	connectedAccountsClient := connectedAccounts.NewConnectedAccountsClientImpl(connector)
+	accounts, err := connectedAccountsClient.Get(orgID, &providerType)
 
 	ids := []string{}
 	for _, account := range accounts {

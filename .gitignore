@@ -3,3 +3,4 @@ crash.log
 .terraform*
 terraform-provider-vmc
 vender/*
+.idea/

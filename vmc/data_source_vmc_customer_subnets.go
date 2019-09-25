@@ -23,7 +23,7 @@ func dataSourceVmcCustomerSubnets() *schema.Resource {
 			"connected_account_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The linked connected account identifier.",
-				Optional:    true,
+				Required:    true,
 			},
 			"region": &schema.Schema{
 				Type:        schema.TypeString,
