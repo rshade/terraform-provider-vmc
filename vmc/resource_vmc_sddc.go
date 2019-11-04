@@ -122,10 +122,6 @@ func resourceSddc() *schema.Resource {
 				ForceNew: true,
 				Default:  "us-west-2",
 			},
-			"cluster_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 		},
 	}
 }

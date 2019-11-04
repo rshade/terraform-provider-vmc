@@ -36,3 +36,15 @@ The following arguments are supported:
 * `private_ip` - (Required) Workload VM private IP to be assigned the public IP just allocated.
 
 * `name` - (Required) Workload VM private IPs to be assigned the public IP just allocated.
+
+## Attributes Reference
+
+In addition to arguments listed above, the following attributes are exported:
+
+* `allocation ID` - IP allocation identifier.
+
+* `public_ip` - public IP allocated to the SDDC.
+
+* `dnat_rule_id` - dnat rule identifier.
+
+* `snat_rule_id` - snat rule identifier.

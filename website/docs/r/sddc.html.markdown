@@ -77,3 +77,9 @@ The following arguments are supported:
 * `sddc_template_id` - (Optional) If provided, configuration from the template will applied to the provisioned SDDC.
 
 * `deployment_type` - (Optional) Denotes if request is for a SingleAZ or a MultiAZ SDDC. Default is SingleAZ.
+
+## Attributes Reference
+
+In addition to arguments listed above, the following attributes are exported:
+
+* `id` - SDDC identifier.
