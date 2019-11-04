@@ -32,3 +32,11 @@ data "vmc_customer_subnets" "my_subnets" {
 * `force_refresh` - (Optional) Boolean value when set to true, forces the mappings for datacenters to be refreshed for the connected account.
 
 * `instance_type` - (Optional) The server instance type to be used.
+
+## Attributes Reference
+
+In addition to arguments listed above, the following attributes are exported:
+
+* `customer_available_zones` - A list of AWS subnet IDs to create links to in the customer's account.
+
+* `ids` - A list of AWS subnet IDs to create links to in the customer's account.
