@@ -7,8 +7,7 @@ description: A customer subnets data source.
 
 # vmc_customer_subnets
 
-The switching profile data source provides information about switching profiles configured in NSX. A switching profile is a template that defines the settings of one or more logical switches. There can be both factory default and user defined switching profiles. One example of a switching profile is a quality of service (QoS) profile which defines the QoS settings of all switches that use the defined switch profile.
-
+The customer subnets data source provides information about customer's compatible subnets for account linking.
 ## Example Usage
 
 ```hcl
@@ -20,14 +19,16 @@ data "vmc_customer_subnets" "my_subnets" {
 
 ## Argument Reference
 
-* `org_id` - (Required) 
+* `org_id` - (Required) Organization identifier.
 
-* `region` - (Required) 
+* `region` - (Required) The region of the cloud resources to work in.
 
-* `num_hosts` - (Optional) 
+* `num_hosts` - (Optional) The number of hosts.
 
-* `sddc_id` - (Optional) 
+* `connected_account_id` - (Optional) The linked connected account identifier.
 
-* `force_refresh` - (Optional) 
+* `sddc_id` - (Optional) SDDC identifier.
 
-* `instance_type` - (Optional) 
+* `force_refresh` - (Optional) Boolean value when set to true, forces the mappings for datacenters to be refreshed for the connected account.
+
+* `instance_type` - (Optional) The server instance type to be used.

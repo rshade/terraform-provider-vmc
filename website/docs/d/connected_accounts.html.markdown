@@ -6,7 +6,7 @@ description: A connected accounts data source.
 
 # vmc_connected_accounts
 
-This data source provides information about a IP pool configured in NSX.
+The connected accounts data source get a list of connected accounts.
 
 ## Example Usage
 
@@ -18,4 +18,4 @@ data "vmc_connected_accounts" "my_accounts" {
 
 ## Argument Reference
 
-* `org_id` - (Required) ID of the organization
+* `org_id` - (Required) Organization identifier.
