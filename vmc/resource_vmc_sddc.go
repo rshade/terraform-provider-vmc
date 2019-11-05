@@ -194,7 +194,6 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 
 	// Wait until Sddc is created
 	sddcID := task.ResourceId
-	fmt.Println(*sddcID)
 	d.SetId(*sddcID)
 	return resource.Retry(300*time.Minute, func() *resource.RetryError {
 		tasksClient := tasks.NewTasksClientImpl(connectorWrapper.Connector)
@@ -212,10 +211,8 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 
 		}
 		if *task.Status != "FINISHED" {
-			log.Printf("Expected instance to be created but was in state %s", *task.Status)
 			return resource.RetryableError(fmt.Errorf("Expected instance to be created but was in state %s", *task.Status))
 		}
-		log.Printf("creation complete, waiting for read")
 		return resource.NonRetryableError(resourceSddcRead(d, m))
 	})
 }
@@ -261,9 +258,8 @@ func resourceSddcDelete(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err)
 	}
-
+	tasksClient := tasks.NewTasksClientImpl(connector)
 	return resource.Retry(300*time.Minute, func() *resource.RetryError {
-		tasksClient := tasks.NewTasksClientImpl(connector)
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err))
@@ -339,8 +335,6 @@ func expandAccountLinkSddcConfig(l []interface{}) []model.AccountLinkSddcConfig 
 
 	for _, config := range l {
 		c := config.(map[string]interface{})
-		fmt.Println("Value of C")
-		fmt.Println(c)
 		var subnetIds []string
 		for _, subnetID := range c["customer_subnet_ids"].([]interface{}) {
 			subnetIds = append(subnetIds, subnetID.(string))

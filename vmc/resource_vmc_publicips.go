@@ -40,28 +40,28 @@ func resourcePublicIP() *schema.Resource {
 			"public_ip": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of this resource",
+				Description: "Allocated Public IP",
 			},
 			"private_ip": {
 				Type:        schema.TypeString,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Optional:    true,
-				Description: "ID of this resource",
+				Description: "Workload VM private IP",
 			},
 			"name": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "ID of this resource",
+				Description: "Workload VM name",
 			},
 			"dnat_rule_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of this resource",
+				Description: "DNAT rule ID",
 			},
 			"snat_rule_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "ID of this resource",
+				Description: "SNAT rule ID",
 			},
 		},
 	}
