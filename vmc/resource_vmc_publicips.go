@@ -85,7 +85,6 @@ func resourcePublicIPCreate(d *schema.ResourceData, m interface{}) error {
 
 	// Create Public IP
 	task, err := publicIPsClient.Create(orgID, sddcID, *sddcAllocatePublicIpSpec)
-	log.Print("Into creating IP")
 	if err != nil {
 		return fmt.Errorf("error while creating public IP : %v", err)
 	}
@@ -107,7 +106,6 @@ func resourcePublicIPCreate(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("error while getting list of public IPs for SDDC %s: %v", d.Get("sddc_id").(string), err))
 			}
-			log.Print("got ips ", len(publicIPs))
 			for i := 0; i < len(publicIPs); i++ {
 				singleVal := publicIPs[i]
 				if d.Get("private_ip").(string) == *(singleVal.AssociatedPrivateIp) {
@@ -192,8 +190,6 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 				Name:     &publicIPName,
 			}
 			task, err := publicIPClient.Update(orgID, sddcID, allocationID, "detach", newSDDCPublicIP)
-			log.Print("into detach private ip")
-
 			if err != nil {
 				return fmt.Errorf("error while detaching the public ip: %v", err)
 			}
@@ -211,8 +207,6 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 				Name:                &publicIPName,
 			}
 			task, err := publicIPClient.Update(orgID, sddcID, allocationID, "reattach", newSDDCPublicIP)
-			log.Print("into reattach private ip")
-
 			if err != nil {
 				return fmt.Errorf("error while reattaching the public IP : %v", err)
 			}
