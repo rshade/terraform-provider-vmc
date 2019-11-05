@@ -52,6 +52,8 @@ func resourcePublicIP() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Workload VM name",
+				Required:    true,
+				Description: "private IP allocated to the SDDC.",
 			},
 			"name": {
 				Type:        schema.TypeString,
