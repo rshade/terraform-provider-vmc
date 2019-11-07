@@ -179,12 +179,13 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 	orgID := d.Get("org_id").(string)
 	sddcID := d.Get("sddc_id").(string)
 	publicIPName := d.Get("name").(string)
+	associatedPrivateIP := d.Get("private_ip").(string)
+	publicIP := d.Get("public_ip").(string)
 
 	if d.HasChange("private_ip") {
 
 		if d.Get("private_ip") == "" {
 			//detach privateIP case
-			publicIP := d.Get("public_ip").(string)
 			newSDDCPublicIP := model.SddcPublicIp{
 				PublicIp: publicIP,
 				Name:     &publicIPName,
@@ -193,14 +194,23 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return fmt.Errorf("error while detaching the public ip: %v", err)
 			}
-			err = WaitForTask(connector, orgID, task.Id)
+			tasksClient := tasks.NewTasksClientImpl(connector)
+			err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+				task, err := tasksClient.Get(orgID, task.Id)
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("Error while waiting for task sddc %s: %v", task.Id, err))
+				}
+				if *task.Status != "FINISHED" {
+					return resource.RetryableError(fmt.Errorf("Expected IP to be detached but was in state %s", *task.Status))
+				}
+				return resource.NonRetryableError(resourcePublicIPRead(d, m))
+			})
 			if err != nil {
-				return fmt.Errorf("Error while waiting for the detach task %s: %v", task.Id, err)
+				return err
 			}
+
 		} else {
 			//reattach privateIP case
-			publicIP := d.Get("public_ip").(string)
-			associatedPrivateIP := d.Get("private_ip").(string)
 			newSDDCPublicIP := model.SddcPublicIp{
 				PublicIp:            publicIP,
 				AssociatedPrivateIp: &associatedPrivateIP,
@@ -210,19 +220,26 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return fmt.Errorf("error while reattaching the public IP : %v", err)
 			}
-			err = WaitForTask(connector, orgID, task.Id)
+			tasksClient := tasks.NewTasksClientImpl(connector)
+			err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+				task, err := tasksClient.Get(orgID, task.Id)
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))
+				}
+				if *task.Status != "FINISHED" {
+					return resource.RetryableError(fmt.Errorf("expected IP to be reattached but was in state %s", *task.Status))
+				}
+				return resource.NonRetryableError(resourcePublicIPRead(d, m))
+			})
 			if err != nil {
-				return fmt.Errorf("Error while waiting for the reattach task %s: %v", task.Id, err)
+				return err
 			}
 		}
-		d.Set("private_ip", d.Get("private_ip").(string))
 
 	} else if d.HasChange("name") {
-
-		newPublicIPName := d.Get("name").(string)
-		associatedPrivateIP := d.Get("private_ip").(string)
+		//rename case
 		newSDDCPublicIP := model.SddcPublicIp{
-			Name:                &newPublicIPName,
+			Name:                &publicIPName,
 			AssociatedPrivateIp: &associatedPrivateIP,
 		}
 		task, err := publicIPClient.Update(orgID, sddcID, allocationID, "rename", newSDDCPublicIP)
@@ -230,13 +247,21 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return fmt.Errorf("error while updating public IP for rename action type  : %v", err)
 		}
-		err = WaitForTask(connector, orgID, task.Id)
+
+		tasksClient := tasks.NewTasksClientImpl(connector)
+		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			task, err := tasksClient.Get(orgID, task.Id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))
+			}
+			if *task.Status != "FINISHED" {
+				return resource.RetryableError(fmt.Errorf("expected IP to be renamed but was in state %s", *task.Status))
+			}
+			return resource.NonRetryableError(resourcePublicIPRead(d, m))
+		})
 		if err != nil {
-			return fmt.Errorf("Error while waiting for the rename task %s: %v", task.Id, err)
+			return err
 		}
-		d.Set("name", d.Get("name").(string))
 	}
-
 	return resourcePublicIPRead(d, m)
-
 }

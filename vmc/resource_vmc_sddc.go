@@ -299,14 +299,23 @@ func resourceSddcUpdate(d *schema.ResourceData, m interface{}) error {
 		task, err := esxsClient.Create(orgID, sddcID, esxConfig, &action)
 
 		if err != nil {
-			return fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err)
+			return fmt.Errorf("Error while updating number of host for SDDC %s: %v", sddcID, err)
 		}
-		err = WaitForTask(connector, orgID, task.Id)
+		tasksClient := tasks.NewTasksClientImpl(connector)
+		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			task, err := tasksClient.Get(orgID, task.Id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("Error while waiting for task sddc %s: %v", task.Id, err))
+			}
+			if *task.Status != "FINISHED" {
+				return resource.RetryableError(fmt.Errorf("Expected Host to be updated but was in state %s", *task.Status))
+			}
+			return resource.NonRetryableError(resourceSddcRead(d, m))
+		})
 		if err != nil {
-			return fmt.Errorf("Error while waiting for task %s: %v", task.Id, err)
+			return err
 		}
 	}
-
 	// Update sddc name
 	if d.HasChange("sddc_name") {
 		sddcClient := sddcs.NewSddcsClientImpl(connector)
@@ -321,7 +330,6 @@ func resourceSddcUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		d.Set("sddc_name", sddc.Name)
 	}
-
 	return resourceSddcRead(d, m)
 }
 
