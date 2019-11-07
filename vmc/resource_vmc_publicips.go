@@ -157,9 +157,8 @@ func resourcePublicIPDelete(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err)
 	}
-
+	tasksClient := tasks.NewTasksClientImpl(connector)
 	return resource.Retry(300*time.Minute, func() *resource.RetryError {
-		tasksClient := tasks.NewTasksClientImpl(connector)
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err))

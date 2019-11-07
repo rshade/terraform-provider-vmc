@@ -6,8 +6,10 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/sddcs"
+	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/tasks"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestAccResourceVmcSddc_basic(t *testing.T) {
@@ -71,7 +73,17 @@ func testCheckVmcSddcDestroy(s *terraform.State) error {
 		if err != nil {
 			return fmt.Errorf("Error while deleting sddc %s, %s", sddcID, err)
 		}
-		err = WaitForTask(connector, orgID, task.Id)
+		tasksClient := tasks.NewTasksClientImpl(connector)
+		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			task, err := tasksClient.Get(orgID, task.Id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err))
+			}
+			if *task.Status != "FINISHED" {
+				return resource.RetryableError(fmt.Errorf("Expected instance to be deleted but was in state %s", *task.Status))
+			}
+			return resource.NonRetryableError(nil)
+		})
 		if err != nil {
 			return fmt.Errorf("Error while waiting for task %q: %v", task.Id, err)
 		}

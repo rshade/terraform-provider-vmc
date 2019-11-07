@@ -6,8 +6,10 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/sddcs/publicips"
+	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/tasks"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestAccResourceVmcPublicIP_basic(t *testing.T) {
@@ -67,7 +69,6 @@ func testCheckVmcPublicIPExists(name string) resource.TestCheckFunc {
 	}
 }
 
-
 func testCheckVmcPublicIPDestroy(s *terraform.State) error {
 
 	connectorWrapper := testAccProvider.Meta().(*ConnectorWrapper)
@@ -83,11 +84,21 @@ func testCheckVmcPublicIPDestroy(s *terraform.State) error {
 		orgID := rs.Primary.Attributes["org_id"]
 		sddcID := rs.Primary.Attributes["sddc_id"]
 
-		task, err := publicIPClient.Delete(orgID, sddcID,allocationID)
+		task, err := publicIPClient.Delete(orgID, sddcID, allocationID)
 		if err != nil {
-			return fmt.Errorf("Error while deleting sddc %s, %s", sddcID, err)
+			return fmt.Errorf("Error while deleting IP allocation ID %s, %s", allocationID, err)
 		}
-		err = WaitForTask(connector, orgID, task.Id)
+		tasksClient := tasks.NewTasksClientImpl(connector)
+		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			task, err := tasksClient.Get(orgID, task.Id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("Error while deleting public IP allocation %s: %v", allocationID, err))
+			}
+			if *task.Status != "FINISHED" {
+				return resource.RetryableError(fmt.Errorf("Expected instance to be deleted but was in state %s", *task.Status))
+			}
+			return resource.NonRetryableError(nil)
+		})
 		if err != nil {
 			return fmt.Errorf("Error while waiting for task %q: %v", task.Id, err)
 		}

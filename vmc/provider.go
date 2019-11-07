@@ -5,9 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/utils"
-	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/tasks"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/runtime/protocol/client"
-	"time"
 )
 
 type ConnectorWrapper struct {
@@ -61,25 +59,4 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("Error creating connector : %v ", err)
 	}
 	return &ConnectorWrapper{connector, refreshToken, vmcURL, cspURL}, nil
-}
-
-func WaitForTask(connector client.Connector, orgID string, taskID string) error {
-	fmt.Printf("Wait for task %q to complete\n", taskID)
-	tasksClient := tasks.NewTasksClientImpl(connector)
-
-	for {
-
-		task, err := tasksClient.Get(orgID, taskID)
-		if err != nil {
-			return fmt.Errorf("Error while getting task %s: %v", taskID, err)
-		}
-
-		if *task.Status == "STARTED" || *task.Status == "CANCELING" {
-			waitInterval := 2 * time.Second
-			fmt.Print(".")
-			time.Sleep(waitInterval)
-			continue
-		}
-		return nil
-	}
 }
