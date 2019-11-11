@@ -21,6 +21,12 @@ func resourcePublicIP() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(10 * time.Minute),
+			Update: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(10 * time.Minute),
+		},
+
 		Schema: map[string]*schema.Schema{
 			"org_id": {
 				Type:        schema.TypeString,
@@ -91,7 +97,7 @@ func resourcePublicIPCreate(d *schema.ResourceData, m interface{}) error {
 
 	tasksClient := tasks.NewTasksClientImpl(connector)
 
-	return resource.Retry(300*time.Minute, func() *resource.RetryError {
+	return resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
 		task, err := tasksClient.Get(orgID, task.Id)
 
 		if err != nil {
@@ -158,7 +164,7 @@ func resourcePublicIPDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err)
 	}
 	tasksClient := tasks.NewTasksClientImpl(connector)
-	return resource.Retry(300*time.Minute, func() *resource.RetryError {
+	return resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err))
@@ -194,7 +200,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 				return fmt.Errorf("error while detaching the public ip: %v", err)
 			}
 			tasksClient := tasks.NewTasksClientImpl(connector)
-			err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
 				task, err := tasksClient.Get(orgID, task.Id)
 				if err != nil {
 					return resource.NonRetryableError(fmt.Errorf("Error while waiting for task sddc %s: %v", task.Id, err))
@@ -220,7 +226,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 				return fmt.Errorf("error while reattaching the public IP : %v", err)
 			}
 			tasksClient := tasks.NewTasksClientImpl(connector)
-			err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+			err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
 				task, err := tasksClient.Get(orgID, task.Id)
 				if err != nil {
 					return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))
@@ -248,7 +254,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		tasksClient := tasks.NewTasksClientImpl(connector)
-		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+		err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
 			task, err := tasksClient.Get(orgID, task.Id)
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))

@@ -43,6 +43,11 @@ resource "vmc_sddc" "sddc_1" {
       connected_account_id = "${data.vmc_connected_accounts.my_accounts.ids.0}"
     },
   ]
+  timeouts {
+    create = "300m"
+    update = "300m"
+    delete = "180m"
+  }
 }
 
 resource "vmc_publicips" "IP1" {

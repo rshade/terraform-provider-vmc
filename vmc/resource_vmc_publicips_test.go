@@ -8,6 +8,7 @@ import (
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/sddcs/publicips"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/tasks"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -76,7 +77,7 @@ func testCheckVmcPublicIPDestroy(s *terraform.State) error {
 	publicIPClient := publicips.NewPublicipsClientImpl(connector)
 
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "vmc_sddc" {
+		if rs.Type != "vmc_publicips" {
 			continue
 		}
 
@@ -89,10 +90,15 @@ func testCheckVmcPublicIPDestroy(s *terraform.State) error {
 			return fmt.Errorf("Error while deleting IP allocation ID %s, %s", allocationID, err)
 		}
 		tasksClient := tasks.NewTasksClientImpl(connector)
-		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+		err = resource.Retry(10*time.Minute, func() *resource.RetryError {
 			task, err := tasksClient.Get(orgID, task.Id)
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error while deleting public IP allocation %s: %v", allocationID, err))
+			}
+
+			if task.ErrorMessage != nil && strings.Contains(*task.ErrorMessage, "Entity is not found") {
+				fmt.Print("Resource already deleted")
+				return resource.NonRetryableError(nil)
 			}
 			if *task.Status != "FINISHED" {
 				return resource.RetryableError(fmt.Errorf("Expected instance to be deleted but was in state %s", *task.Status))
@@ -111,8 +117,7 @@ func testAccVmcPublicIPConfigBasic(name string) string {
 provider "vmc" {
 	refresh_token = %q
 	
-	# refresh_token = "ac5140ea-1749-4355-a892-56cff4893be0"
-	 csp_url       = "https://console-stg.cloud.vmware.com"
+	csp_url       = "https://console-stg.cloud.vmware.com"
     vmc_url = "https://stg.skyscraper.vmware.com"
 }
 	
@@ -122,13 +127,17 @@ data "vmc_org" "my_org" {
 
 resource "vmc_publicips" "publicip_1" {
 	org_id = "${data.vmc_org.my_org.id}"
-	sddc_id = "30aa9e93-766d-498b-92aa-75f3b5304a7e"
+	sddc_id = %q
 	name     = %q
 	private_ip = "10.105.167.133"
+	timeouts {
+    delete = "5m"
+  }
 }
 `,
 		os.Getenv("REFRESH_TOKEN"),
 		os.Getenv("ORG_ID"),
+		os.Getenv("SDDC_ID"),
 		name,
 	)
 }

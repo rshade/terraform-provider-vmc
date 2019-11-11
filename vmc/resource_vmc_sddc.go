@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/utils"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vapi/std/errors"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/model"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/sddcs"
@@ -22,6 +21,12 @@ func resourceSddc() *schema.Resource {
 		Delete: resourceSddcDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(300 * time.Minute),
+			Update: schema.DefaultTimeout(300 * time.Minute),
+			Delete: schema.DefaultTimeout(180 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -195,13 +200,13 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 	// Wait until Sddc is created
 	sddcID := task.ResourceId
 	d.SetId(*sddcID)
-	return resource.Retry(300*time.Minute, func() *resource.RetryError {
+	return resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
 		tasksClient := tasks.NewTasksClientImpl(connectorWrapper.Connector)
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			if err.Error() == (errors.Unauthenticated{}.Error()) {
 				log.Print("Auth error", err.Error(), errors.Unauthenticated{}.Error())
-				connectorWrapper.Connector, err = utils.NewVmcConnector(connectorWrapper.RefreshToken, connectorWrapper.VmcURL, connectorWrapper.CspURL)
+				err = connectorWrapper.authenticate()
 				if err != nil {
 					return resource.NonRetryableError(fmt.Errorf("Error authenticating in CSP: %s", err))
 				}
@@ -259,7 +264,7 @@ func resourceSddcDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err)
 	}
 	tasksClient := tasks.NewTasksClientImpl(connector)
-	return resource.Retry(300*time.Minute, func() *resource.RetryError {
+	return resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err))
@@ -302,7 +307,7 @@ func resourceSddcUpdate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("Error while updating number of host for SDDC %s: %v", sddcID, err)
 		}
 		tasksClient := tasks.NewTasksClientImpl(connector)
-		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+		err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
 			task, err := tasksClient.Get(orgID, task.Id)
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error while waiting for task sddc %s: %v", task.Id, err))

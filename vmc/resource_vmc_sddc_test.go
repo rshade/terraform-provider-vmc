@@ -8,6 +8,7 @@ import (
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/sddcs"
 	"gitlab.eng.vmware.com/het/vmware-vmc-sdk/vapi/bindings/vmc/orgs/tasks"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -74,10 +75,14 @@ func testCheckVmcSddcDestroy(s *terraform.State) error {
 			return fmt.Errorf("Error while deleting sddc %s, %s", sddcID, err)
 		}
 		tasksClient := tasks.NewTasksClientImpl(connector)
-		err = resource.Retry(300*time.Minute, func() *resource.RetryError {
+		err = resource.Retry(180*time.Minute, func() *resource.RetryError {
 			task, err := tasksClient.Get(orgID, task.Id)
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("Error while deleting sddc %s: %v", sddcID, err))
+			}
+			if task.ErrorMessage != nil && strings.Contains(*task.ErrorMessage, "Entity is not found") {
+				fmt.Print("Resource already deleted")
+				return resource.NonRetryableError(nil)
 			}
 			if *task.Status != "FINISHED" {
 				return resource.RetryableError(fmt.Errorf("Expected instance to be deleted but was in state %s", *task.Status))

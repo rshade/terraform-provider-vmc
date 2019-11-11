@@ -15,6 +15,15 @@ type ConnectorWrapper struct {
 	CspURL       string
 }
 
+func (c *ConnectorWrapper) authenticate() error {
+	var err error
+	c.Connector, err = utils.NewVmcConnector(c.RefreshToken, c.VmcURL, c.CspURL)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Provider for VMware VMC Console APIs. Returns terraform.ResourceProvider
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
