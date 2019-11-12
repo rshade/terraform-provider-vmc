@@ -130,14 +130,11 @@ resource "vmc_publicips" "publicip_1" {
 	sddc_id = %q
 	name     = %q
 	private_ip = "10.105.167.133"
-	timeouts {
-    delete = "5m"
-  }
 }
 `,
 		os.Getenv("REFRESH_TOKEN"),
 		os.Getenv("ORG_ID"),
-		os.Getenv("SDDC_ID"),
+		os.Getenv("TEST_SDDC_ID"),
 		name,
 	)
 }
