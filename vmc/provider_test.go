@@ -38,6 +38,6 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal("ORG_ID must be set for acceptance tests")
 	}
 	if v := os.Getenv("TEST_SDDC_ID"); v == "" {
-		t.Fatal("TEST_ SDDC_ID must be set for acceptance tests")
+		t.Fatal("TEST_SDDC_ID must be set for acceptance tests")
 	}
 }
