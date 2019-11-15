@@ -44,6 +44,8 @@ Update following fields in the [main.tf](main.tf) with your infra settings
 * refresh_token
 * id
 * sddc_name
+* sddc_id
+* name
 
 Note if you wnat to connect to the staging environment, uncomment the vmc_url and csp_url under vmc settings.
 
@@ -84,7 +86,7 @@ resource "vmc_sddc" "sddc_1" {
   skip_creating_vxlan = false
   sso_domain          = "vmc.local"
 
-  # sddc_template_id = ""
+ 
   deployment_type = "SingleAZ"
 
   account_link_sddc_config = [
@@ -93,6 +95,12 @@ resource "vmc_sddc" "sddc_1" {
       connected_account_id = "${data.vmc_connected_accounts.my_accounts.ids.0}"
     },
   ]
+}
+resource "vmc_publicips" "publicip_1" {
+	org_id = "${data.vmc_org.my_org.id}"
+	sddc_id = ""
+	name     = ""
+	private_ip = "10.105.167.133"
 }
 
 ```
@@ -141,3 +149,8 @@ $ export ORG_ID=xxx
 $ export TEST_SDDC_ID=xxx 
 $ make testacc
 ```
+
+# License
+Copyright © 2019 VMware, Inc.
+
+The VMC Terraform provider is available under MPL2.0 license.

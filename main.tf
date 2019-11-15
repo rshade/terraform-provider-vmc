@@ -1,13 +1,13 @@
 provider "vmc" {
-  refresh_token = ""
+  refresh_token = "5aAHQLgiecL08W0L4qif0G9I6B0tge8Y3kapdgs6UTY8LRdL51dC5Z4QrVzAI5I3"
 
   # for staging environment only
-  # vmc_url       = "https://stg.skyscraper.vmware.com/vmc/api"
-  # csp_url       = "https://console-stg.cloud.vmware.com"
+  vmc_url       = "https://stg.skyscraper.vmware.com/vmc/api"
+  csp_url       = "https://console-stg.cloud.vmware.com"
 }
 
 data "vmc_org" "my_org" {
-  id = ""
+  id = "05e0a625-3293-41bb-a01f-35e762781c2a:"
 }
 
 data "vmc_connected_accounts" "my_accounts" {
