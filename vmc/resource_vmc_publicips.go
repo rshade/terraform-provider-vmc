@@ -21,6 +21,15 @@ func resourcePublicIP() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 
+<<<<<<< HEAD
+=======
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(10 * time.Minute),
+			Update: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(10 * time.Minute),
+		},
+
+>>>>>>> master
 		Schema: map[string]*schema.Schema{
 			"org_id": {
 				Type:        schema.TypeString,
@@ -40,7 +49,11 @@ func resourcePublicIP() *schema.Resource {
 			"public_ip": {
 				Type:        schema.TypeString,
 				Computed:    true,
+<<<<<<< HEAD
 				Description: "public IP allocated to the SDDC.",
+=======
+				Description: "Allocated Public IP",
+>>>>>>> master
 			},
 			"private_ip": {
 				Type:        schema.TypeString,
@@ -52,6 +65,7 @@ func resourcePublicIP() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Workload VM name",
+<<<<<<< HEAD
 				Required:    true,
 				Description: "private IP allocated to the SDDC.",
 			},
@@ -59,16 +73,26 @@ func resourcePublicIP() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "name for the workload VM public IP assignment.",
+=======
+>>>>>>> master
 			},
 			"dnat_rule_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
+<<<<<<< HEAD
 				Description: "DNAT rule identifier.",
+=======
+				Description: "DNAT rule ID",
+>>>>>>> master
 			},
 			"snat_rule_id": {
 				Type:        schema.TypeString,
 				Computed:    true,
+<<<<<<< HEAD
 				Description: "SNAT rule identifier.",
+=======
+				Description: "SNAT rule ID",
+>>>>>>> master
 			},
 		},
 	}
@@ -98,7 +122,11 @@ func resourcePublicIPCreate(d *schema.ResourceData, m interface{}) error {
 
 	tasksClient := tasks.NewTasksClientImpl(connector)
 
+<<<<<<< HEAD
 	return resource.Retry(300*time.Minute, func() *resource.RetryError {
+=======
+	return resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+>>>>>>> master
 		task, err := tasksClient.Get(orgID, task.Id)
 
 		if err != nil {
@@ -164,9 +192,14 @@ func resourcePublicIPDelete(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err)
 	}
+<<<<<<< HEAD
 
 	return resource.Retry(300*time.Minute, func() *resource.RetryError {
 		tasksClient := tasks.NewTasksClientImpl(connector)
+=======
+	tasksClient := tasks.NewTasksClientImpl(connector)
+	return resource.Retry(d.Timeout(schema.TimeoutDelete), func() *resource.RetryError {
+>>>>>>> master
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
 			return resource.NonRetryableError(fmt.Errorf("Error while deleting public IP %s: %v", publicIP, err))
@@ -186,12 +219,20 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 	orgID := d.Get("org_id").(string)
 	sddcID := d.Get("sddc_id").(string)
 	publicIPName := d.Get("name").(string)
+<<<<<<< HEAD
+=======
+	associatedPrivateIP := d.Get("private_ip").(string)
+	publicIP := d.Get("public_ip").(string)
+>>>>>>> master
 
 	if d.HasChange("private_ip") {
 
 		if d.Get("private_ip") == "" {
 			//detach privateIP case
+<<<<<<< HEAD
 			publicIP := d.Get("public_ip").(string)
+=======
+>>>>>>> master
 			newSDDCPublicIP := model.SddcPublicIp{
 				PublicIp: publicIP,
 				Name:     &publicIPName,
@@ -200,6 +241,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return fmt.Errorf("error while detaching the public ip: %v", err)
 			}
+<<<<<<< HEAD
 			err = WaitForTask(connector, orgID, task.Id)
 			if err != nil {
 				return fmt.Errorf("Error while waiting for the detach task %s: %v", task.Id, err)
@@ -208,6 +250,25 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 			//reattach privateIP case
 			publicIP := d.Get("public_ip").(string)
 			associatedPrivateIP := d.Get("private_ip").(string)
+=======
+			tasksClient := tasks.NewTasksClientImpl(connector)
+			err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+				task, err := tasksClient.Get(orgID, task.Id)
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("Error while waiting for task sddc %s: %v", task.Id, err))
+				}
+				if *task.Status != "FINISHED" {
+					return resource.RetryableError(fmt.Errorf("Expected IP to be detached but was in state %s", *task.Status))
+				}
+				return resource.NonRetryableError(resourcePublicIPRead(d, m))
+			})
+			if err != nil {
+				return err
+			}
+
+		} else {
+			//reattach privateIP case
+>>>>>>> master
 			newSDDCPublicIP := model.SddcPublicIp{
 				PublicIp:            publicIP,
 				AssociatedPrivateIp: &associatedPrivateIP,
@@ -217,6 +278,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 			if err != nil {
 				return fmt.Errorf("error while reattaching the public IP : %v", err)
 			}
+<<<<<<< HEAD
 			err = WaitForTask(connector, orgID, task.Id)
 			if err != nil {
 				return fmt.Errorf("Error while waiting for the reattach task %s: %v", task.Id, err)
@@ -230,6 +292,28 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 		associatedPrivateIP := d.Get("private_ip").(string)
 		newSDDCPublicIP := model.SddcPublicIp{
 			Name:                &newPublicIPName,
+=======
+			tasksClient := tasks.NewTasksClientImpl(connector)
+			err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+				task, err := tasksClient.Get(orgID, task.Id)
+				if err != nil {
+					return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))
+				}
+				if *task.Status != "FINISHED" {
+					return resource.RetryableError(fmt.Errorf("expected IP to be reattached but was in state %s", *task.Status))
+				}
+				return resource.NonRetryableError(resourcePublicIPRead(d, m))
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+	} else if d.HasChange("name") {
+		//rename case
+		newSDDCPublicIP := model.SddcPublicIp{
+			Name:                &publicIPName,
+>>>>>>> master
 			AssociatedPrivateIp: &associatedPrivateIP,
 		}
 		task, err := publicIPClient.Update(orgID, sddcID, allocationID, "rename", newSDDCPublicIP)
@@ -237,6 +321,7 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return fmt.Errorf("error while updating public IP for rename action type  : %v", err)
 		}
+<<<<<<< HEAD
 		err = WaitForTask(connector, orgID, task.Id)
 		if err != nil {
 			return fmt.Errorf("Error while waiting for the rename task %s: %v", task.Id, err)
@@ -246,4 +331,23 @@ func resourcePublicIPUpdate(d *schema.ResourceData, m interface{}) error {
 
 	return resourcePublicIPRead(d, m)
 
+=======
+
+		tasksClient := tasks.NewTasksClientImpl(connector)
+		err = resource.Retry(d.Timeout(schema.TimeoutUpdate), func() *resource.RetryError {
+			task, err := tasksClient.Get(orgID, task.Id)
+			if err != nil {
+				return resource.NonRetryableError(fmt.Errorf("error while waiting for task sddc %s: %v", task.Id, err))
+			}
+			if *task.Status != "FINISHED" {
+				return resource.RetryableError(fmt.Errorf("expected IP to be renamed but was in state %s", *task.Status))
+			}
+			return resource.NonRetryableError(resourcePublicIPRead(d, m))
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return resourcePublicIPRead(d, m)
+>>>>>>> master
 }
