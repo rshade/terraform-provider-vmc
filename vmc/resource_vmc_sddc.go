@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	vapiErrors "github.com/vmware/vsphere-automation-sdk-go/lib/vapi/std/errors"
+	"github.com/vmware/vsphere-automation-sdk-go/lib/vapi/std/errors"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/protocol/client"
 	"github.com/vmware/vsphere-automation-sdk-go/services/vmc/model"
 	"github.com/vmware/vsphere-automation-sdk-go/services/vmc/orgs"
@@ -192,9 +192,10 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 	if numHost == 0 {
 		return fmt.Errorf("number of hosts is a required parameter and cannot be 0")
 	}
-	if (numHost == 1) && (oneNodeReducedCapacity == false) {
-		return fmt.Errorf("one_node_reduced_capacity must be set to true with num_hosts = 1")
-	}
+	/*
+		if (numHost == 1) && (oneNodeReducedCapacity == false) {
+			return fmt.Errorf("one_node_reduced_capacity must be set to true with num_hosts = 1")
+		}*/
 
 	var sddcTypePtr *string
 	if sddcType != "" {
@@ -234,6 +235,9 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Create a Sddc
+	log.Printf("OneNodeReducedCapacity %v \n", oneNodeReducedCapacity)
+
+	log.Printf("SDDCConfigSpew %#+v \n", *awsSddcConfig)
 	task, err := sddcClient.Create(orgID, *awsSddcConfig, nil)
 	if err != nil {
 		return fmt.Errorf("Error while creating sddc %s: %v", sddcName, err)
@@ -246,8 +250,8 @@ func resourceSddcCreate(d *schema.ResourceData, m interface{}) error {
 		tasksClient := orgs.NewDefaultTasksClient(connectorWrapper)
 		task, err := tasksClient.Get(orgID, task.Id)
 		if err != nil {
-			if err.Error() == (vapiErrors.Unauthenticated{}.Error()) {
-				log.Print("Auth error", err.Error(), vapiErrors.Unauthenticated{}.Error())
+			if err.Error() == (errors.Unauthenticated{}.Error()) {
+				log.Print("Auth error", err.Error(), errors.Unauthenticated{}.Error())
 				err = connectorWrapper.authenticate()
 				if err != nil {
 					return resource.NonRetryableError(fmt.Errorf("Error authenticating in CSP: %s", err))
@@ -271,7 +275,7 @@ func resourceSddcRead(d *schema.ResourceData, m interface{}) error {
 	orgID := d.Get("org_id").(string)
 	sddc, err := getSDDC(connector, orgID, sddcID)
 	if err != nil {
-		if err.Error() == vapiErrors.NewNotFound().Error() {
+		if err.Error() == errors.NewNotFound().Error() {
 			log.Printf("SDDC with ID %s not found", sddcID)
 			d.SetId("")
 			return nil
@@ -302,6 +306,7 @@ func resourceSddcRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("sddc_access_state", sddc.SddcAccessState)
 	d.Set("sddc_type", sddc.SddcType)
 	d.Set("sddc_state", sddc.SddcState)
+	d.Set("one_node_reduced_capacity", sddc.OneNodeReducedCapacity)
 	if sddc.ResourceConfig != nil {
 		d.Set("vc_url", sddc.ResourceConfig.VcUrl)
 		d.Set("cloud_username", sddc.ResourceConfig.CloudUsername)
@@ -320,7 +325,7 @@ func resourceSddcDelete(d *schema.ResourceData, m interface{}) error {
 
 	task, err := sddcClient.Delete(orgID, sddcID, nil, nil, nil)
 	if err != nil {
-		if err.Error() == vapiErrors.NewInvalidRequest().Error() {
+		if err.Error() == errors.NewInvalidRequest().Error() {
 			log.Printf("Can't Delete : SDDC with ID %s not found or already deleted %v", sddcID, err)
 			return nil
 		}
