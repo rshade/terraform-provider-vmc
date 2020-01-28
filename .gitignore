@@ -11,4 +11,5 @@ terraform.tfstate
 *~
 /*.tf
 .terraform.tfstate.lock.info
+# Created when built on windows
 terraform-provider-vmc.exe

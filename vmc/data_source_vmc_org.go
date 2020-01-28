@@ -5,6 +5,7 @@ package vmc
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/vmware/vsphere-automation-sdk-go/services/vmc"
 )
@@ -29,6 +30,11 @@ func dataSourceVmcOrg() *schema.Resource {
 				Description: "The Name of this resource",
 				Computed:    true,
 			},
+			"properties": {
+				Type:        schema.TypeMap,
+				Description: "The Properties of this resource",
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -49,6 +55,7 @@ func dataSourceVmcOrgRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(org.Id)
 	d.Set("display_name", org.DisplayName)
 	d.Set("name", org.Name)
+	d.Set("properties", org.Properties)
 
 	return nil
 }
